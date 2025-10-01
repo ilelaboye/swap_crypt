@@ -13,7 +13,7 @@ class SwapController extends Controller
 
         // Example: Swap 100 USDT → BTC
         $quote = $binance->getQuote("USDT", "ADA", 1);
-        dd($quote);
+        return $quote;
         // if (isset($quote['quoteId'])) {
         //     $result = $binance->acceptQuote($quote['quoteId']);
         //     return response()->json([
