@@ -34,8 +34,6 @@ class BinanceService
 
     public function getQuote($fromAsset, $toAsset, $fromAmount)
     {
-        Log::info($this->apiKey);
-        Log::info($this->secret);
 
         $params = [
             'fromAsset' => $fromAsset,
@@ -44,13 +42,27 @@ class BinanceService
             'recvWindow' => 5000,
             'timestamp' => round(microtime(true) * 1000),
         ];
+        Log::info($this->apiKey);
 
-        $query = $this->sign($params);
+        $serverTime = Http::get('https://api.binance.com/api/v3/time')->json();
+        Log::info($serverTime);
+        $params['timestamp'] = $serverTime['serverTime'];
+        $query = http_build_query($params);
+        $signature = hash_hmac('sha256', $query, $this->secret);
+        Log::info($signature);
+        $url = "{$this->baseUrl}/sapi/v1/convert/getQuote?{$query}&signature={$signature}";
 
-        $response = Http::withHeaders($this->headers())
-            ->post("{$this->baseUrl}/sapi/v1/convert/getQuote?{$query}");
+        $response = Http::withHeaders(['X-MBX-APIKEY' => $this->apiKey])
+            ->post($url);
 
         return $response->json();
+
+        // $query = $this->sign($params);
+
+        // $response = Http::withHeaders($this->headers())
+        //     ->post("{$this->baseUrl}/sapi/v1/convert/getQuote?{$query}");
+
+        // return $response->json();
     }
 
     public function acceptQuote($quoteId)
