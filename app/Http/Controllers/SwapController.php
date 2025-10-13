@@ -85,12 +85,13 @@ class SwapController extends Controller
                 Log::info('incresed ' . $change);
                 //if it has increased by 1%, swap back to usdt
                 if ($change >= 0.7) {
-                    $quoteData = $bybit->getQuote($currency, 'USDT', $amount);
+                    $quoteData = $bybit->getQuote($currency, 'USDT', $trans->purchase_quantity);
                     $quoteTxId = $quoteData['result']['quoteTxId'] ?? null;
                     if (!$quoteTxId) return response()->json(['error' => 'Failed to get quote', 'data' => $quoteData]);
                     $accept = $bybit->acceptQuoteWithQuoteId($quoteTxId);
                     $update = DB::table('transactions')->where('status', true)->where('currency', $currency)->update([
                         'swap_price' => $new_price,
+                        'swap_quantity' => $quoteData['result']['exchangeRate'],
                         'profit' => floatval($new_price) - floatval($trans->purchase_price),
                         'sold_at' => now(),
                         'soldQuoteTxId' => $quoteTxId,
