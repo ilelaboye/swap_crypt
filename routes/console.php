@@ -12,12 +12,6 @@ Artisan::command('inspire', function () {
 
 
 Schedule::call(function () {
-    Log::info('Running scheduled task every minute.');
+    Log::info('Running scheduled task 5 seconds.');
     app(SwapController::class)->calculate('ADA');
-})->everyFiveMinutes();
-
-Schedule::call(function () {
-    //
-    Log::info('Running scheduled task every minute.');
-    app(SwapController::class)->calculateProfit('ADA');
 })->everyFiveSeconds();
