@@ -103,25 +103,29 @@ class SwapController extends Controller
             }
         } else {
             // since there is no active trade, buy at the current price
+            $ck = DB::table('transactions')->where('status', false)->where('currency', $currency)->latest()->first();
+            //don't rebuy immediately you swap back to usdt, wait for 5minutes before you buy
+            //OR buy back if this is the first time we are purchasing this currency
+            if (($ck && now()->greaterThanOrEqualTo($ck->updated_at)) || !$ck) {
+                $quoteData = $bybit->getQuote("USDT", $currency, $amount);
+                $quoteTxId = $quoteData['result']['quoteTxId'] ?? null;
 
-            $quoteData = $bybit->getQuote("USDT", $currency, $amount);
-            $quoteTxId = $quoteData['result']['quoteTxId'] ?? null;
+                if (!$quoteTxId) return response()->json(['error' => 'Failed to get quote', 'data' => $quoteData]);
 
-            if (!$quoteTxId) return response()->json(['error' => 'Failed to get quote', 'data' => $quoteData]);
-
-            $accept = $bybit->acceptQuoteWithQuoteId($quoteTxId);
-            Log::info('Accept quote: ');
-            Log::info($accept);
-            $purchase_price = floatval($amount) / floatval($quoteData['result']['exchangeRate']); // 1 ADA = how many usdt
-            $save = DB::table('transactions')->insert([
-                'purchase_price' => $purchase_price, // 1 ADA = how many usdt
-                'currency' => $currency,
-                'bought_at' => now(),
-                'base_amount' => $amount,
-                'purchase_quantity' => $quoteData['result']['exchangeRate'],
-                'quoteTxId' => $accept['result']['quoteTxId']
-            ]);
-            return $accept;
+                $accept = $bybit->acceptQuoteWithQuoteId($quoteTxId);
+                Log::info('Accept quote: ');
+                Log::info($accept);
+                $purchase_price = floatval($amount) / floatval($quoteData['result']['exchangeRate']); // 1 ADA = how many usdt
+                $save = DB::table('transactions')->insert([
+                    'purchase_price' => $purchase_price, // 1 ADA = how many usdt
+                    'currency' => $currency,
+                    'bought_at' => now(),
+                    'base_amount' => $amount,
+                    'purchase_quantity' => $quoteData['result']['exchangeRate'],
+                    'quoteTxId' => $accept['result']['quoteTxId']
+                ]);
+                return $accept;
+            }
         }
     }
 }
