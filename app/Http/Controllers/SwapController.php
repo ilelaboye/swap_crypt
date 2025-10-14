@@ -108,8 +108,6 @@ class SwapController extends Controller
             $ck = DB::table('transactions')->where('status', false)->where('currency', $currency)->latest()->first();
             //don't rebuy immediately you swap back to usdt, wait for 5minutes before you buy
             //OR buy back if this is the first time we are purchasing this currency
-            Log::info('time ' . now()->timestamp);
-            Log::info('update ' . $ck->sold_at);
             if (($ck && now()->timestamp >= Carbon::parse($ck->sold_at)->addMinutes(5)->timestamp) || !$ck) {
                 Log::info('yeeeeee');
                 $quoteData = $bybit->getQuote("USDT", $currency, $amount);
