@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\BinanceService;
 use App\Services\BybitService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -95,7 +96,8 @@ class SwapController extends Controller
                         'profit' => floatval($new_price) - floatval($trans->purchase_price),
                         'sold_at' => now(),
                         'soldQuoteTxId' => $quoteTxId,
-                        'status' => false
+                        'status' => false,
+                        'updated_at' => now()
                     ]);
 
                     return $accept;
@@ -106,7 +108,10 @@ class SwapController extends Controller
             $ck = DB::table('transactions')->where('status', false)->where('currency', $currency)->latest()->first();
             //don't rebuy immediately you swap back to usdt, wait for 5minutes before you buy
             //OR buy back if this is the first time we are purchasing this currency
-            if (($ck && now()->greaterThanOrEqualTo($ck->updated_at)) || !$ck) {
+            Log::info('time ' . now()->timestamp);
+            Log::info('update ' . $ck->sold_at);
+            if (($ck && now()->timestamp >= Carbon::parse($ck->sold_at)->addMinutes(5)->timestamp) || !$ck) {
+                Log::info('yeeeeee');
                 $quoteData = $bybit->getQuote("USDT", $currency, $amount);
                 $quoteTxId = $quoteData['result']['quoteTxId'] ?? null;
 
@@ -122,7 +127,9 @@ class SwapController extends Controller
                     'bought_at' => now(),
                     'base_amount' => $amount,
                     'purchase_quantity' => $quoteData['result']['exchangeRate'],
-                    'quoteTxId' => $accept['result']['quoteTxId']
+                    'quoteTxId' => $accept['result']['quoteTxId'],
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ]);
                 return $accept;
             }
