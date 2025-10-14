@@ -79,10 +79,11 @@ class SwapController extends Controller
             $checkQuoteData = $bybit->getQuote("USDT", $currency, $amount);
             Log::info($checkQuoteData);
             $new_price = floatval($amount) / floatval($checkQuoteData['result']['exchangeRate']);
+            Log::info('new price ' . $new_price);
+            Log::info('old price ' . $trans->purchase_price);
             if ($new_price > $trans->purchase_price) {
                 $change = (($new_price - $trans->purchase_price) / $trans->purchase_price) * 100;
-                Log::info('new price ' . $new_price);
-                Log::info('old price ' . $trans->purchase_price);
+
                 Log::info('incresed ' . $change);
                 //if it has increased by 1%, swap back to usdt
                 if ($change >= 0.7) {
